@@ -6,7 +6,6 @@ import axios from "axios";
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [selectedVideo, setSelectedVideo] = useState<string>("");
   const [result, setResult] = useState<string>("");
 
   // 미리 준비된 비디오 리스트
@@ -30,7 +29,6 @@ export default function Home() {
   // 비디오 선택 처리
   const handleVideoSelect = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const url = event.target.value;
-    setSelectedVideo(url);
     if (videoRef.current) {
       videoRef.current.src = url;
       videoRef.current.load(); // 새 비디오 로드
