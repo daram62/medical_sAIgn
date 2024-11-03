@@ -5,8 +5,10 @@ import axios from "axios";
 
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | Blob | null>(null);
+  const [videoSource, setVideoSource] = useState<string>("");
   const [result, setResult] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // 미리 준비된 비디오 리스트
   const videoList = [
@@ -26,13 +28,48 @@ export default function Home() {
     { name: "건강보험", url: "/videos/건강보험.mp4" },
   ];
 
-  // 비디오 선택 처리
-  const handleVideoSelect = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  // 비디오 파일 업로드 처리
+  const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      setSelectedFile(file);
+
+      const videoURL = URL.createObjectURL(file);
+      setVideoSource(videoURL);
+
+      if (videoRef.current) {
+        videoRef.current.src = videoURL;
+        videoRef.current.load();
+        videoRef.current.play();
+      }
+    }
+  };
+
+  // 준비된 비디오 선택 처리
+  const handleVideoSelect = async (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
     const url = event.target.value;
-    if (videoRef.current) {
-      videoRef.current.src = url;
-      videoRef.current.load(); // 새 비디오 로드
-      videoRef.current.play(); // 비디오 자동 재생
+    if (url) {
+      setVideoSource(url);
+
+      // 비디오를 Blob으로 가져와서 selectedFile에 저장
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const file = new File([blob], "selected_video.mp4", {
+          type: blob.type,
+        });
+        setSelectedFile(file);
+      } catch (error) {
+        console.error("비디오 로드 오류:", error);
+      }
+
+      if (videoRef.current) {
+        videoRef.current.src = url;
+        videoRef.current.load();
+        videoRef.current.play();
+      }
     }
   };
 
@@ -44,44 +81,30 @@ export default function Home() {
     }
   };
 
-  // 프레임을 캡처하여 서버에 전송
-  const sendFrameToServer = async () => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const context = canvas.getContext("2d");
+  // 비디오 파일을 서버에 전송
+  const sendVideoToServer = async () => {
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
 
-      if (context) {
-        // 캔버스 크기를 동영상 크기에 맞춤
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
-
-        context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        const imageBlob = await new Promise<Blob | null>((resolve) =>
-          canvas.toBlob(resolve, "image/jpeg")
-        );
-
-        if (imageBlob) {
-          const formData = new FormData();
-          formData.append("file", imageBlob, "frame.jpg");
-
-          try {
-            const response = await axios.post(
-              "http://localhost:8000/predict",
-              formData,
-              {
-                headers: { "Content-Type": "multipart/form-data" },
-              }
-            );
-            setResult(
-              (response.data as { prediction: string }).prediction ??
-                "예측 실패"
-            );
-          } catch (error) {
-            console.error("예측 요청 오류:", error);
-            setResult("예측 요청 중 오류 발생");
+      try {
+        setIsLoading(true); // 로딩 시작
+        const response = await axios.post(
+          "http://localhost:8000/predict",
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
           }
-        }
+        );
+        setResult(response.data.predicted_label ?? "예측 실패");
+      } catch (error) {
+        console.error("예측 요청 오류:", error);
+        setResult("예측 요청 중 오류 발생");
+      } finally {
+        setIsLoading(false); // 로딩 종료
       }
+    } else {
+      setResult("비디오를 선택하거나 업로드해주세요.");
     }
   };
 
@@ -93,11 +116,21 @@ export default function Home() {
       </h1>
 
       <h1 className="text-3xl font-semibold mb-4 text-gray-700">sAIgn</h1>
-      {/* 비디오 선택 드롭다운 */}
+
+      {/* 비디오 업로드 또는 선택 */}
       <div className="w-full max-w-md mb-6">
         <h2 className="text-2xl font-gangwon font-semibold mb-4 text-gray-700 text-center">
-          비디오 선택
+          비디오 업로드 또는 선택
         </h2>
+        {/* 비디오 업로드 */}
+        <input
+          type="file"
+          accept="video/*"
+          onChange={handleVideoUpload}
+          className="w-full p-2 border font-gangwon rounded-lg shadow-sm text-center mb-4"
+        />
+        <p className="text-center text-gray-600 mb-2">또는</p>
+        {/* 비디오 선택 드롭다운 */}
         <select
           className="w-full p-2 border font-gangwon rounded-lg shadow-sm text-center"
           onChange={handleVideoSelect}
@@ -120,20 +153,33 @@ export default function Home() {
           className="w-full h-full object-cover"
           onEnded={handleVideoEnd} // 비디오가 끝날 때 이벤트 핸들러
         />
-        <canvas ref={canvasRef} className="hidden"></canvas>
       </div>
 
       {/* 번역 버튼 */}
       <button
-        onClick={sendFrameToServer}
-        className="bg-[#B4E0D9] text-gray-800 font-semibold py-3 px-8 rounded-lg hover:bg-[#9FDCC9] transition mb-6 shadow-md text-xl"
+        onClick={sendVideoToServer}
+        className={`bg-[#B4E0D9] text-gray-800 font-semibold py-3 px-8 rounded-lg transition mb-6 shadow-md text-xl ${
+          isLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-[#9FDCC9]"
+        }`}
+        disabled={isLoading} // 로딩 중일 때 버튼 비활성화
       >
-        번역하기
+        {isLoading ? "예측 중..." : "번역하기"}
       </button>
 
-      {/* 예측 결과 표시 */}
-      <div className="w-[400px] p-6 bg-[#E7ECEF] text-center rounded-lg shadow-lg text-gray-700 text-xl">
-        <p>{result || "비디오를 선택하고 번역하기를 클릭하세요."}</p>
+      <div className="w-full max-w-md p-6 bg-[#E7ECEF] text-center rounded-lg shadow-lg text-gray-700 text-xl">
+        {isLoading ? (
+          <p>로딩 중입니다...</p>
+        ) : (
+          <p>
+            {result || (
+              <>
+                비디오를 선택하거나 업로드하고
+                <br />
+                번역하기를 클릭하세요.
+              </>
+            )}
+          </p>
+        )}
       </div>
     </div>
   );
