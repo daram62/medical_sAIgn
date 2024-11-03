@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import axios from "axios";
 
 export default function Home() {
@@ -28,6 +28,14 @@ export default function Home() {
     { name: "건강보험", url: "/videos/건강보험.mp4" },
   ];
 
+  // 비디오 업로드 또는 선택 시 비디오 재생
+  useEffect(() => {
+    if (videoRef.current && videoSource) {
+      videoRef.current.load();
+      videoRef.current.play();
+    }
+  }, [videoSource]);
+
   // 비디오 파일 업로드 처리
   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -36,12 +44,6 @@ export default function Home() {
 
       const videoURL = URL.createObjectURL(file);
       setVideoSource(videoURL);
-
-      if (videoRef.current) {
-        videoRef.current.src = videoURL;
-        videoRef.current.load();
-        videoRef.current.play();
-      }
     }
   };
 
@@ -63,12 +65,6 @@ export default function Home() {
         setSelectedFile(file);
       } catch (error) {
         console.error("비디오 로드 오류:", error);
-      }
-
-      if (videoRef.current) {
-        videoRef.current.src = url;
-        videoRef.current.load();
-        videoRef.current.play();
       }
     }
   };
@@ -148,10 +144,11 @@ export default function Home() {
       <div className="relative w-[640px] h-[400px] bg-gray-200 border-4 border-[#B4E0D9] rounded-lg overflow-hidden shadow-lg mb-6">
         <video
           ref={videoRef}
+          src={videoSource}
           controls
-          muted // 비디오를 음소거 상태로 설정
+          muted
           className="w-full h-full object-cover"
-          onEnded={handleVideoEnd} // 비디오가 끝날 때 이벤트 핸들러
+          onEnded={handleVideoEnd}
         />
       </div>
 

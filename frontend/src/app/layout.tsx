@@ -14,7 +14,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Medical sAIgn",
+  title: "sAIgn",
   description: "청각장애인을 위한 진료 상황 수어 번역기",
 };
 
