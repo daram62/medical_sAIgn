@@ -1,4 +1,4 @@
-# 의료 전문 수어 통역 AI : medical_sAIgn
+# medical_sAIgn
 
 ## 청각 장애인-의사 진료 상황의 원활한 의사소통을 도와주는 의료 전문 수어 통역 AI
 
