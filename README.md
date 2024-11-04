@@ -4,11 +4,13 @@
 
 본 프로젝트는 2024 의료인공지능 아이디어 경진대회의 작품으로서 청각 장애인과 의사 간의 진료 상황에서 원활한 의사소통을 지원하기 위한 의료 전문 수어 통역 AI를 개발하는 것을 목표로 합니다.
 
-<img width="1014" alt="image" src="https://github.com/user-attachments/assets/1dd731cc-2f49-43bd-81db-7ebf737bc74b">
+<img width="780" alt="image" src="https://github.com/user-attachments/assets/1dd731cc-2f49-43bd-81db-7ebf737bc74b">
 
 ### 소개
 
 의료 현장에서 청각 장애인 환자와 의사 간의 소통은 매우 중요하지만, 전문 수어 통역사가 항상 함께할 수는 없습니다. 이 문제를 해결하기 위해 본 프로젝트는 의학 용어에 특화된 한국어 수어 인식 AI를 개발하였습니다.
+
+### 시연 영상 
 
 https://youtu.be/k-SpLoo-NLc
 
